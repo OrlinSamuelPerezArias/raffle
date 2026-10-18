@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stickers Bendecidos - Responsive & Alertas</title>
+    <title>Stickers Bendecidos - Monitoreo & Filtros</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'JetBrains Mono', monospace; background-color: #f4f0ea; color: #1a1a1a; }
         .font-pixel { font-family: 'Silkscreen', cursive; }
         
-        /* Grid inteligente para ver más tarjetas en celular */
         .responsive-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
@@ -19,7 +18,7 @@
 
         @media (min-width: 640px) {
             .responsive-grid {
-                grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
                 gap: 0.8rem;
             }
         }
@@ -35,9 +34,15 @@
             border: 2px solid #eab308;
             box-shadow: 0 4px 14px rgba(234, 179, 8, 0.2);
         }
+
+        .pixel-card-azar {
+            background: #18151f;
+            border: 2px solid #a855f7;
+            box-shadow: 0 4px 14px rgba(168, 85, 247, 0.2);
+        }
     </style>
 </head>
-<body class="min-h-screen w-screen flex flex-col items-center justify-start sm:justify-center p-2 sm:p-4 overflow-x-hidden">
+<body class="min-h-screen w-screen flex flex-col items-center justify-start p-2 sm:p-4 overflow-x-hidden">
 
     <div class="w-full max-w-5xl flex flex-col gap-3">
         
@@ -58,8 +63,8 @@
                 </button>
 
                 <div class="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-lg border border-[#1a1a1a]">
-                    <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                    <span id="cloudStatus" class="text-[0.65rem] font-bold text-green-700">CONECTANDO...</span>
+                    <span id="dotStatus" class="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></span>
+                    <span id="cloudStatus" class="text-[0.65rem] font-bold text-yellow-700">CONECTANDO...</span>
                 </div>
             </div>
         </header>
@@ -80,47 +85,78 @@
             </div>
         </div>
 
-        <!-- Grid de Cards Responsive (Para ver más números en celular) -->
+        <!-- Grid de Cards Responsive -->
         <div id="gridBendecidos" class="responsive-grid">
-            <div class="col-span-full text-center py-6 text-neutral-500 font-bold text-xs">Cargando estado en vivo...</div>
+            <div class="col-span-full text-center py-6 text-neutral-500 font-bold text-xs">Cargando datos en tiempo real...</div>
         </div>
 
-        <!-- Sección Inferior -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <!-- Registro de Actividad -->
-            <div class="bg-white border-2 border-[#1a1a1a] rounded-xl p-2.5 flex flex-col gap-1.5 shadow-sm">
-                <div class="text-[0.7rem] font-bold text-neutral-800 uppercase border-b border-neutral-200 pb-1 flex justify-between">
-                    <span>📜 Registro de Actividad</span>
-                    <span class="text-emerald-600">En vivo</span>
+        <!-- Panel de Filtros & Tabla Histórica (Fondo Negro - Contraste Blanco) -->
+        <div class="bg-white border-2 border-[#1a1a1a] rounded-xl p-3 flex flex-col gap-3 shadow-md">
+            <div class="text-xs font-bold text-neutral-900 uppercase border-b border-neutral-200 pb-2 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-1">
+                <span class="flex items-center gap-1">📊 AUDITORÍA DE VENTAS POR RANGO & HORA</span>
+                <span id="countFiltrados" class="text-[0.65rem] text-amber-800 font-extrabold bg-amber-100 px-2.5 py-0.5 rounded border border-amber-300">0 REGISTROS</span>
+            </div>
+
+            <!-- Módulo de Filtros en Fondo Negro y Letras Blancas -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-[#0f1410] p-3 rounded-lg border-2 border-[#1a1a1a] text-[0.7rem]">
+                <div>
+                    <label class="block text-white font-extrabold mb-1">Buscar Ticket:</label>
+                    <input type="text" id="filterTicket" placeholder="ej. 00000" oninput="aplicarFiltrosTabla()" class="w-full bg-[#1b241c] text-white border border-[#22c55e] p-2 rounded outline-none text-xs font-bold placeholder-neutral-400 focus:border-amber-400 focus:bg-[#232f25]">
                 </div>
-                <div id="boxLogs" class="h-24 overflow-y-auto bg-[#070d0a] text-green-400 p-2 rounded text-[0.65rem] font-mono leading-relaxed border border-neutral-800">
-                    <div>[${new Date().toLocaleTimeString()}] Inicializando módulos de red...</div>
+
+                <div>
+                    <label class="block text-white font-extrabold mb-1">Posición Desde (#):</label>
+                    <input type="number" id="filterPosMin" placeholder="ej. 0" oninput="aplicarFiltrosTabla()" class="w-full bg-[#1b241c] text-white border border-[#22c55e] p-2 rounded outline-none text-xs font-bold placeholder-neutral-400 focus:border-amber-400 focus:bg-[#232f25]">
+                </div>
+
+                <div>
+                    <label class="block text-white font-extrabold mb-1">Posición Hasta (#):</label>
+                    <input type="number" id="filterPosMax" placeholder="ej. 100000" oninput="aplicarFiltrosTabla()" class="w-full bg-[#1b241c] text-white border border-[#22c55e] p-2 rounded outline-none text-xs font-bold placeholder-neutral-400 focus:border-amber-400 focus:bg-[#232f25]">
+                </div>
+
+                <div>
+                    <label class="block text-white font-extrabold mb-1">Filtrar Estado:</label>
+                    <select id="filterEstado" onchange="aplicarFiltrosTabla()" class="w-full bg-[#1b241c] text-white border border-[#eab308] p-2 rounded outline-none text-xs font-bold cursor-pointer focus:border-amber-400">
+                        <option value="todos" class="bg-[#1b241c] text-white">Todos los Estados</option>
+                        <option value="confirmado" class="bg-[#1b241c] text-emerald-400 font-bold">Confirmados</option>
+                        <option value="pendiente" class="bg-[#1b241c] text-amber-400 font-bold">Pendientes</option>
+                        <option value="disponible" class="bg-[#1b241c] text-neutral-300">Disponibles</option>
+                    </select>
                 </div>
             </div>
 
-            <!-- Base de Datos (Wikipedia) -->
-            <div class="bg-white border-2 border-[#1a1a1a] rounded-xl p-2.5 flex flex-col gap-1.5 shadow-sm">
-                <div class="text-[0.7rem] font-bold text-neutral-800 uppercase border-b border-neutral-200 pb-1">
-                    📖 Base de Datos (Wikipedia)
-                </div>
-                <div id="boxWiki" class="h-24 overflow-y-auto text-neutral-700 text-[0.65rem] p-1 leading-tight">
-                    Cargando información externa...
-                </div>
+            <!-- Tabla de Resultados -->
+            <div class="overflow-x-auto max-h-64 overflow-y-auto border-2 border-[#1a1a1a] rounded-lg">
+                <table class="w-full text-left border-collapse text-[0.7rem]">
+                    <thead class="bg-neutral-900 text-white sticky top-0 uppercase text-[0.65rem] tracking-wider">
+                        <tr>
+                            <th class="p-2 border-b border-neutral-700">Fecha / Hora</th>
+                            <th class="p-2 border-b border-neutral-700">Ticket</th>
+                            <th class="p-2 border-b border-neutral-700">Transición</th>
+                            <th class="p-2 border-b border-neutral-700">Posición Venta</th>
+                            <th class="p-2 border-b border-neutral-700">Libres Restantes</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaHistorial">
+                        <tr>
+                            <td colspan="5" class="p-4 text-center text-neutral-500 font-bold">Esperando eventos históricos...</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 
-        <!-- Footer / Barra de Estado -->
+        <!-- Footer -->
         <footer class="bg-white border-2 border-[#1a1a1a] p-2.5 rounded-xl flex justify-between items-center text-[0.65rem] sm:text-xs font-bold text-neutral-700 shadow-sm">
-            <span>🟢 ALEATORIO ACTUAL: <span id="txtUltimoAleatorio" class="text-amber-600 font-extrabold">-----</span></span>
+            <span>🟢 ESTADO EN TIEMPO REAL</span>
             <span id="txtUltimaHora">--:--:--</span>
         </footer>
 
     </div>
 
-    <!-- Firebase SDK Modular -->
+    <!-- Firebase Firestore SDK (Sin Auth) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -134,7 +170,6 @@
         };
 
         const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
         const db = getFirestore(app);
 
         const LISTA_BENDECIDOS = ["00000", "11111", "22222", "33333", "44444", "55555", "66666", "77777"];
@@ -150,13 +185,13 @@
         };
 
         let ultimaRevisionTimestamp = null;
+        let eventosGlobales = [];
 
-        // Solicitar Permiso de Notificaciones Flotantes
         window.solicitarPermisoNotificaciones = function() {
             if ("Notification" in window) {
                 Notification.requestPermission().then(perm => {
                     if (perm === "granted") {
-                        alert("✅ Notificaciones activadas en pantalla.");
+                        alert("✅ Notificaciones activadas.");
                         actualizarBotonNotif(true);
                     } else {
                         alert("⚠️ No se concedió permiso para notificaciones.");
@@ -175,11 +210,10 @@
             }
         }
 
-        // Función para probar notificaciones manualmente
         window.probarNotificacion = function() {
             if ("Notification" in window && Notification.permission === "granted") {
                 new Notification("🧪 Prueba de Notificación Rifa", {
-                    body: "Las alertas en vivo están configuradas correctamente en tu dispositivo.",
+                    body: "Las alertas en vivo funcionan correctamente en tu celular.",
                     icon: "https://cdn-icons-png.flaticon.com/512/3112/3112905.png"
                 });
             } else {
@@ -192,63 +226,44 @@
                 const aleatorio = data.ultimoAleatorio || "N/A";
                 const restantes = data.disponiblesGlobal !== undefined ? data.disponiblesGlobal.toLocaleString() : "N/A";
                 
-                new Notification("🔄 Actualización de Ciclo Rifa", {
-                    body: `Último azar: ${aleatorio} | Boletos libres restantes: ${restantes}`,
+                new Notification("🔄 Actualización de Rifa", {
+                    body: `Último azar: ${aleatorio} | Boletos libres: ${restantes}`,
                     icon: "https://cdn-icons-png.flaticon.com/512/3112/3112905.png"
                 });
             }
         }
 
-        // Cargar Wikipedia
-        async function cargarWiki() {
-            try {
-                const res = await fetch("https://es.wikipedia.org/api/rest_v1/page/summary/Loter%C3%ADa");
-                const data = await res.json();
-                if (data.extract) {
-                    document.getElementById("boxWiki").innerHTML = `<strong>Lotería:</strong> ${data.extract}`;
-                }
-            } catch (e) {
-                document.getElementById("boxWiki").innerText = "No se pudo sincronizar la base externa.";
-            }
-        }
-        cargarWiki();
-
-        function logPb(msg) {
-            const box = document.getElementById("boxLogs");
-            if (!box) return;
-            const hora = new Date().toLocaleTimeString();
-            box.innerHTML += `<div>[${hora}] ${msg}</div>`;
-            box.scrollTop = box.scrollHeight;
-        }
-
-        // Login Firebase
-        signInWithEmailAndPassword(auth, "pe@gmail.com", "1234567890")
-            .then(() => {
-                document.getElementById('cloudStatus').innerText = "EN VIVO";
-                if (Notification.permission === "granted") actualizarBotonNotif(true);
-                escucharFirebase();
-            })
-            .catch(err => {
-                document.getElementById('cloudStatus').innerText = "ERROR AUTH";
-                console.error(err);
-            });
-
-        function escucharFirebase() {
+        function escucharFirestoreDirecto() {
             const refDoc = doc(db, "rifa_estado", "actual");
+            
             onSnapshot(refDoc, (snap) => {
                 if (snap.exists()) {
+                    document.getElementById('cloudStatus').innerText = "EN VIVO";
+                    document.getElementById('cloudStatus').className = "text-[0.65rem] font-bold text-green-700";
+                    document.getElementById('dotStatus').className = "w-2 h-2 bg-green-500 rounded-full animate-pulse";
+                    
+                    if (Notification.permission === "granted") actualizarBotonNotif(true);
+
                     const data = snap.data();
+                    eventosGlobales = data.eventos || [];
+                    
                     renderizarBendecidos(data);
+                    aplicarFiltrosTabla();
                 }
+            }, (error) => {
+                console.error("Error al escuchar Firestore:", error);
+                document.getElementById('cloudStatus').innerText = "ERROR LECTURA";
+                document.getElementById('cloudStatus').className = "text-[0.65rem] font-bold text-red-600";
+                document.getElementById('dotStatus').className = "w-2 h-2 bg-red-500 rounded-full";
             });
         }
 
         function renderizarBendecidos(data) {
             const boletosObj = data.boletos || {};
+            const ultimoAzar = data.ultimoAleatorio || null;
 
             document.getElementById('statRestantes').innerText = data.disponiblesGlobal !== undefined ? data.disponiblesGlobal.toLocaleString() : "--";
             document.getElementById('statVendidos').innerText = data.vendidosGlobal !== undefined ? `#${data.vendidosGlobal.toLocaleString()}` : "--";
-            document.getElementById('txtUltimoAleatorio').innerText = data.ultimoAleatorio || "-----";
 
             const container = document.getElementById('gridBendecidos');
             container.innerHTML = "";
@@ -272,7 +287,7 @@
                 card.innerHTML = `
                     <div class="flex items-center gap-1 text-[0.55rem] font-bold uppercase tracking-wide ${esGanador ? 'text-yellow-400' : 'text-neutral-400'}">
                         <span>${esGanador ? '🏆' : '🎁'}</span>
-                        <span class="truncate">${esGanador ? 'GANADOR' : 'LIBRE'}</span>
+                        <span class="truncate">${esGanador ? 'GANADOR' : 'DISPONIBLE'}</span>
                     </div>
 
                     <div class="text-xl sm:text-2xl font-extrabold tracking-wider ${esGanador ? 'text-yellow-300' : 'text-white'}">
@@ -290,16 +305,102 @@
                 container.appendChild(card);
             });
 
-            // Si hay una actualización nueva enviada desde la consola
+            if (ultimoAzar) {
+                const bAzar = boletosObj[ultimoAzar] || {};
+                const estadoAzar = bAzar.resultado || "disponible";
+                const posAzarStr = bAzar.posicionAprox ? `#${bAzar.posicionAprox.toLocaleString()}` : "#--";
+
+                let estadoEstilo = "text-purple-300";
+                if (estadoAzar === "confirmado") estadoEstilo = "text-emerald-400";
+                if (estadoAzar === "pendiente") estadoEstilo = "text-amber-400";
+
+                const cardAzar = document.createElement('div');
+                cardAzar.className = "pixel-card-azar p-2.5 rounded-lg flex flex-col justify-between items-center text-center gap-1 text-purple-300";
+
+                cardAzar.innerHTML = `
+                    <div class="flex items-center gap-1 text-[0.55rem] font-bold uppercase tracking-wide text-purple-400">
+                        <span>🎲</span>
+                        <span class="truncate">${estadoAzar.toUpperCase()}</span>
+                    </div>
+
+                    <div class="text-xl sm:text-2xl font-extrabold tracking-wider text-purple-200">
+                        ${ultimoAzar}
+                    </div>
+
+                    <div class="text-[0.6rem] font-bold text-purple-300 bg-[#120b1c] px-1.5 py-0.5 rounded border border-[#6b21a8] w-full truncate">
+                        ${posAzarStr}
+                    </div>
+
+                    <div class="text-[0.55rem] font-extrabold tracking-wide uppercase ${estadoEstilo} pt-0.5 border-t border-purple-900 w-full truncate">
+                        🎲 ALEATORIO RECIENTE
+                    </div>
+                `;
+                container.appendChild(cardAzar);
+            }
+
             if (data.actualizadoEn && data.actualizadoEn !== ultimaRevisionTimestamp) {
                 ultimaRevisionTimestamp = data.actualizadoEn;
-                logPb(`Ciclo actualizado en nube. Azar: ${data.ultimoAleatorio || 'N/A'}`);
                 enviarNotificacionActualizacion(data);
             }
 
             document.getElementById('statGanadores').innerText = ganadoresCount;
             document.getElementById('txtUltimaHora').innerText = "Act: " + new Date().toLocaleTimeString();
         }
+
+        window.aplicarFiltrosTabla = function() {
+            const ticketQuery = document.getElementById('filterTicket').value.trim();
+            const posMin = document.getElementById('filterPosMin').value !== "" ? Number(document.getElementById('filterPosMin').value) : null;
+            const posMax = document.getElementById('filterPosMax').value !== "" ? Number(document.getElementById('filterPosMax').value) : null;
+            const estadoSel = document.getElementById('filterEstado').value;
+
+            const tbody = document.getElementById('tablaHistorial');
+            tbody.innerHTML = "";
+
+            const filtrados = eventosGlobales.filter(ev => {
+                if (ticketQuery && !ev.boleto.includes(ticketQuery)) return false;
+                if (estadoSel !== "todos" && ev.estado !== estadoSel) return false;
+
+                const pos = ev.vendidos !== undefined && ev.vendidos !== null ? Number(ev.vendidos) : null;
+                if (posMin !== null && (pos === null || pos < posMin)) return false;
+                if (posMax !== null && (pos === null || pos > posMax)) return false;
+
+                return true;
+            });
+
+            document.getElementById('countFiltrados').innerText = `${filtrados.length} REGISTROS`;
+
+            if (filtrados.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-neutral-500 font-bold">No hay eventos que coincidan con los filtros aplicados.</td></tr>`;
+                return;
+            }
+
+            filtrados.slice().reverse().forEach(ev => {
+                const fechaObj = ev.detectado ? new Date(ev.detectado) : null;
+                const horaStr = fechaObj ? `${fechaObj.toLocaleDateString()} ${fechaObj.toLocaleTimeString()}` : "N/A";
+                const posStr = ev.vendidos ? `#${ev.vendidos.toLocaleString()}` : "N/A";
+                const libresStr = ev.disponibles ? ev.disponibles.toLocaleString() : "N/A";
+
+                let badgeEstado = "bg-neutral-100 text-neutral-800 border border-neutral-400 font-bold";
+                if (ev.estado === "confirmado") badgeEstado = "bg-emerald-100 text-emerald-900 border border-emerald-400 font-extrabold";
+                if (ev.estado === "pendiente") badgeEstado = "bg-amber-100 text-amber-900 border border-amber-400 font-extrabold";
+
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-neutral-200 hover:bg-neutral-100 transition-colors";
+                tr.innerHTML = `
+                    <td class="p-2 text-neutral-800 font-semibold">${horaStr}</td>
+                    <td class="p-2 font-extrabold text-neutral-900">${ev.boleto}</td>
+                    <td class="p-2">
+                        <span class="text-[0.6rem] text-neutral-500 mr-1">${ev.anterior || 'inicio'} ➔</span>
+                        <span class="px-1.5 py-0.5 rounded uppercase text-[0.6rem] ${badgeEstado}">${ev.estado}</span>
+                    </td>
+                    <td class="p-2 font-bold text-emerald-800">${posStr}</td>
+                    <td class="p-2 text-neutral-700 font-medium">${libresStr}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        };
+
+        escucharFirestoreDirecto();
     </script>
 </body>
 </html>
