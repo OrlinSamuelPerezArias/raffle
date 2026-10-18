@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoreo Rifa - En Vivo (Cloud)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'JetBrains Mono', monospace; }
+        body {
+            background: #f4f0ea; color: #1a1a1a; height: 100vh; width: 100vw;
+            display: flex; justify-content: center; align-items: center; overflow: hidden;
+        }
+        .main-container {
+            width: 96vw; height: 95vh; background: #eae5dc; border: 2px solid #1a1a1a;
+            border-radius: 12px; box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+            display: flex; flex-direction: column; overflow: hidden; padding: 20px; gap: 14px;
+        }
+        header {
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 2px solid #1a1a1a; padding-bottom: 12px;
+        }
+        .title-area h1 { font-family: 'Instrument Serif', serif; font-size: 2.2rem; font-weight: normal; line-height: 1; }
+        .cloud-status { font-size: 0.75rem; background: #1a1a1a; color: #f4f0ea; padding: 4px 10px; border-radius: 20px; font-weight: bold; }
+
+        .toolbar {
+            display: flex; gap: 10px; align-items: center; background: #dfd9ce; padding: 10px; border-radius: 8px; border: 1px solid #c8c0b0;
+        }
+        .toolbar input, .toolbar select {
+            background: #fff; border: 1px solid #1a1a1a; padding: 6px 10px; border-radius: 4px; font-size: 0.8rem; outline: none;
+        }
+        .toolbar input { flex: 1; }
+
+        .content-grid {
+            flex: 1; display: grid; grid-template-columns: 1.2fr 1fr; gap: 14px; overflow: hidden;
+        }
+        .panel {
+            background: #fff; border: 1px solid #1a1a1a; border-radius: 8px; padding: 14px;
+            display: flex; flex-direction: column; gap: 10px; overflow: hidden; box-shadow: 2px 2px 0px #1a1a1a;
+        }
+        .panel-title { font-size: 0.9rem; font-weight: bold; border-bottom: 1px solid #ddd; padding-bottom: 6px; text-transform: uppercase; }
+        
+        .scroll-box {
+            flex: 1; overflow-y: auto; border: 1px solid #eee; border-radius: 4px; padding: 4px;
+        }
+        table { width: 100%; border-collapse: collapse; font-size: 0.75rem; text-align: left; }
+        th { background: #1a1a1a; color: #fff; padding: 6px; position: sticky; top: 0; font-size: 0.7rem; }
+        td { padding: 6px; border-bottom: 1px solid #eee; }
+
+        .badge { padding: 2px 6px; border-radius: 3px; font-weight: bold; font-size: 0.65rem; text-transform: uppercase; }
+        .est-confirmado { background: #d1fae5; color: #065f46; border: 1px solid #34d399; }
+        .est-disponible { background: #dbeafe; color: #1e40af; border: 1px solid #60a5fa; }
+        .est-pendiente { background: #fef3c7; color: #92400e; border: 1px solid #fbbf24; }
+        .est-desconocido, .est-sin-consultar { background: #f3f4f6; color: #4b5563; }
+
+        .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .stat-card { background: #f9f8f6; border: 1px solid #1a1a1a; border-radius: 6px; padding: 10px; text-align: center; }
+        .stat-val { font-size: 1.2rem; font-weight: bold; }
+        .stat-lbl { font-size: 0.65rem; color: #666; text-transform: uppercase; }
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        <header>
+            <div class="title-area">
+                <h1>Visor Remoto de Rifa</h1>
+            </div>
+            <div id="cloudStatus" class="cloud-status">Conectando a Firebase...</div>
+        </header>
+
+        <div class="stats-row">
+            <div class="stat-card">
+                <div id="statRestantes" class="stat-val">--</div>
+                <div class="stat-lbl">Boletos Restantes (Global)</div>
+            </div>
+            <div class="stat-card">
+                <div id="statVendidos" class="stat-val">--</div>
+                <div class="stat-lbl">Vendidos Aprox. (Global)</div>
+            </div>
+            <div class="stat-card">
+                <div id="statConfirmados" class="stat-val">0</div>
+                <div class="stat-lbl">Monitoreados Confirmados</div>
+            </div>
+        </div>
+
+        <div class="toolbar">
+            <input type="text" id="inputBuscar" placeholder="🔍 Buscar número de boleto (ej. 00000)..." oninput="filtrarDatos()">
+            <select id="selectEstado" onchange="filtrarDatos()">
+                <option value="todos">Todos los estados</option>
+                <option value="confirmado">Confirmados</option>
+                <option value="disponible">Disponibles</option>
+                <option value="pendiente">Pendientes</option>
+                <option value="desconocido">Desconocidos</option>
+            </select>
+        </div>
+
+        <div class="content-grid">
+            <div class="panel">
+                <div class="panel-title">🎟️ Estado Actual de Tickets Monitoreados</div>
+                <div class="scroll-box">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Boleto</th>
+                                <th>Estado</th>
+                                <th>Posición Venta Aprox.</th>
+                                <th>Última Consulta</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaBoletos"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">📜 Bitácora Histórica de Cambios</div>
+                <div class="scroll-box">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Hora</th>
+                                <th>Boleto</th>
+                                <th>Transición</th>
+                                <th>Posición</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaEventos"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAtbggGMavu10FkdNzGTiwQDA4sUohh7Q8",
+            authDomain: "app-coreano.firebaseapp.com",
+            projectId: "app-coreano",
+            storageBucket: "app-coreano.firebasestorage.app",
+            messagingSenderId: "26159454746",
+            appId: "1:26159454746:web:0738142d8df8a402958fa3",
+            measurementId: "G-ER5CHMN50K"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let datosGlobales = { boletos: {}, eventos: [] };
+
+        // Login automático en la web remota
+        signInWithEmailAndPassword(auth, "pe@gmail.com", "1234567890")
+            .then(() => {
+                document.getElementById('cloudStatus').innerText = "🟢 Conectado en Tiempo Real";
+                escucharFirebase();
+            })
+            .catch(err => {
+                document.getElementById('cloudStatus').innerText = "❌ Error Auth";
+                console.error(err);
+            });
+
+        function escucharFirebase() {
+            const ref = doc(db, "rifa_estado", "actual");
+            onSnapshot(ref, (docSnap) => {
+                if (docSnap.exists()) {
+                    datosGlobales = docSnap.data();
+                    renderizarPantalla(datosGlobales);
+                } else {
+                    console.log("Esperando datos del script local...");
+                }
+            });
+        }
+
+        window.renderizarPantalla = function(data) {
+            const boletosObj = data.boletos || {};
+            const eventosArr = data.eventos || [];
+
+            document.getElementById('statRestantes').innerText = data.disponiblesGlobal !== undefined ? data.disponiblesGlobal.toLocaleString() : "--";
+            document.getElementById('statVendidos').innerText = data.vendidosGlobal !== undefined ? `#${data.vendidosGlobal.toLocaleString()}` : "--";
+
+            window._cacheBoletos = boletosObj;
+            window._cacheEventos = eventosArr;
+            filtrarDatos();
+        }
+
+        window.filtrarDatos = function() {
+            const textoBusqueda = document.getElementById('inputBuscar').value.trim();
+            const filtroEstado = document.getElementById('selectEstado').value;
+            const boletosObj = window._cacheBoletos || {};
+            const eventosArr = window._cacheEventos || [];
+
+            const tbodyBoletos = document.getElementById('tablaBoletos');
+            tbodyBoletos.innerHTML = "";
+
+            let confirmadosCount = 0;
+            const chaves = Object.keys(boletosObj);
+
+            chaves.forEach(num => {
+                const b = boletosObj[num];
+                const estado = b.resultado || "desconocido";
+                if (estado === "confirmado") confirmadosCount++;
+
+                // Aplicar filtros
+                if (textoBusqueda && !num.includes(textoBusqueda)) return;
+                if (filtroEstado !== "todos" && estado !== filtroEstado) return;
+
+                const hora = b.consulta ? new Date(b.consulta).toLocaleTimeString() : "N/A";
+                const pos = b.posicionAprox ? `#${b.posicionAprox.toLocaleString()}` : "N/A";
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${num}</strong></td>
+                    <td><span class="badge est-${estado}">${estado}</span></td>
+                    <td style="color: #047857; font-weight:bold;">${pos}</td>
+                    <td>${hora}</td>
+                `;
+                tbodyBoletos.appendChild(tr);
+            });
+
+            document.getElementById('statConfirmados').innerText = confirmadosCount;
+
+            // Renderizar eventos
+            const tbodyEventos = document.getElementById('tablaEventos');
+            tbodyEventos.innerHTML = "";
+            eventosArr.slice().reverse().forEach(ev => {
+                const horaEv = ev.detectado ? new Date(ev.detectado).toLocaleTimeString() : "N/A";
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${horaEv}</td>
+                    <td><strong>${ev.boleto}</strong></td>
+                    <td>${ev.anterior || 'inicio'} ➔ <span class="badge est-${ev.estado}">${ev.estado}</span></td>
+                    <td style="color: #047857; font-weight:bold;">#${ev.vendidos ? ev.vendidos.toLocaleString() : 'N/A'}</td>
+                `;
+                tbodyEventos.appendChild(tr);
+            });
+        }
+    </script>
+</body>
+</html>
