@@ -47,25 +47,15 @@
     <div class="w-full max-w-5xl flex flex-col gap-3">
         
         <!-- Header Principal -->
-        <header class="flex flex-col sm:flex-row justify-between items-center border-2 border-[#1a1a1a] bg-[#eae5dc] p-3 rounded-xl shadow-md gap-2">
+        <header class="flex flex-row justify-between items-center border-2 border-[#1a1a1a] bg-[#eae5dc] p-3 rounded-xl shadow-md">
             <div class="flex items-center gap-2">
                 <span class="text-xl">👑</span>
                 <h1 class="font-pixel text-base sm:text-xl text-amber-600 tracking-wider">STICKERS BENDECIDOS</h1>
             </div>
             
-            <div class="flex flex-wrap items-center justify-center gap-2 w-full sm:w-auto">
-                <button id="btnNotificaciones" onclick="solicitarPermisoNotificaciones()" class="bg-amber-500 hover:bg-amber-600 text-black px-2.5 py-1 rounded-lg text-[0.7rem] font-extrabold cursor-pointer transition">
-                    🔔 Activar Alertas
-                </button>
-                
-                <button onclick="probarNotificacion()" class="bg-neutral-800 hover:bg-black text-amber-400 border border-amber-500/50 px-2.5 py-1 rounded-lg text-[0.7rem] font-extrabold cursor-pointer">
-                    🧪 Probar Alerta
-                </button>
-
-                <div class="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-lg border border-[#1a1a1a]">
-                    <span id="dotStatus" class="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></span>
-                    <span id="cloudStatus" class="text-[0.65rem] font-bold text-yellow-700">CONECTANDO...</span>
-                </div>
+            <div class="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-lg border border-[#1a1a1a]">
+                <span id="dotStatus" class="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></span>
+                <span id="cloudStatus" class="text-[0.65rem] font-bold text-yellow-700">CONECTANDO...</span>
             </div>
         </header>
 
@@ -73,11 +63,11 @@
         <div class="grid grid-cols-3 gap-2">
             <div class="bg-white border-2 border-[#1a1a1a] p-2 rounded-lg text-center shadow-sm">
                 <div class="text-[0.55rem] sm:text-[0.65rem] text-neutral-500 font-bold uppercase">Restantes</div>
-                <div id="statRestantes" class="text-base sm:text-lg font-extrabold text-neutral-900">--</div>
+                <div id="statRestantes" class="text-base sm:text-lg font-extrabold text-neutral-900">100,000</div>
             </div>
             <div class="bg-white border-2 border-[#1a1a1a] p-2 rounded-lg text-center shadow-sm">
                 <div class="text-[0.55rem] sm:text-[0.65rem] text-neutral-500 font-bold uppercase">Vendidos Aprox.</div>
-                <div id="statVendidos" class="text-base sm:text-lg font-extrabold text-amber-600">--</div>
+                <div id="statVendidos" class="text-base sm:text-lg font-extrabold text-amber-600">#0</div>
             </div>
             <div class="bg-white border-2 border-[#1a1a1a] p-2 rounded-lg text-center shadow-sm">
                 <div class="text-[0.55rem] sm:text-[0.65rem] text-neutral-500 font-bold uppercase">Ganadores</div>
@@ -87,7 +77,7 @@
 
         <!-- Grid de Cards Responsive -->
         <div id="gridBendecidos" class="responsive-grid">
-            <div class="col-span-full text-center py-6 text-neutral-500 font-bold text-xs">Cargando interfaz...</div>
+            <!-- Renderizado base instantáneo -->
         </div>
 
         <!-- Panel de Filtros & Tabla Histórica -->
@@ -97,7 +87,7 @@
                 <span id="countFiltrados" class="text-[0.65rem] text-amber-800 font-extrabold bg-amber-100 px-2.5 py-0.5 rounded border border-amber-300">0 REGISTROS</span>
             </div>
 
-            <!-- Módulo de Filtros (Fondo Negro) -->
+            <!-- Módulo de Filtros en Fondo Negro -->
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-[#0f1410] p-3 rounded-lg border-2 border-[#1a1a1a] text-[0.7rem]">
                 <div>
                     <label class="block text-white font-extrabold mb-1">Buscar Ticket:</label>
@@ -184,54 +174,27 @@
             "77777": "RD$25,000"
         };
 
-        let ultimaRevisionTimestamp = null;
         let eventosGlobales = [];
 
-        window.solicitarPermisoNotificaciones = function() {
-            if ("Notification" in window) {
-                Notification.requestPermission().then(perm => {
-                    if (perm === "granted") {
-                        alert("✅ Notificaciones activadas.");
-                        actualizarBotonNotif(true);
-                    } else {
-                        alert("⚠️ No se concedió permiso para notificaciones.");
-                    }
-                });
-            } else {
-                alert("Este navegador no soporta notificaciones.");
-            }
-        };
-
-        function actualizarBotonNotif(activas) {
-            const btn = document.getElementById('btnNotificaciones');
-            if (activas) {
-                btn.innerText = "🔔 Alertas Activas";
-                btn.className = "bg-green-600 text-white px-2.5 py-1 rounded-lg text-[0.7rem] font-extrabold";
-            }
+        // Dibuja las tarjetas inmediatamente al cargar el documento
+        function renderizarBase() {
+            const container = document.getElementById('gridBendecidos');
+            container.innerHTML = "";
+            LISTA_BENDECIDOS.forEach(num => {
+                const card = document.createElement('div');
+                card.className = "pixel-card p-2.5 rounded-lg flex flex-col justify-between items-center text-center gap-1 text-green-400";
+                card.innerHTML = `
+                    <div class="flex items-center gap-1 text-[0.55rem] font-bold uppercase tracking-wide text-neutral-400">
+                        <span>🎁</span><span>DISPONIBLE</span>
+                    </div>
+                    <div class="text-xl sm:text-2xl font-extrabold tracking-wider text-white">${num}</div>
+                    <div class="text-[0.6rem] font-bold text-emerald-300 bg-[#080d09] px-1.5 py-0.5 rounded border border-[#15803d] w-full truncate">#--</div>
+                    <div class="text-[0.55rem] font-extrabold tracking-wide uppercase text-neutral-300 pt-0.5 border-t border-neutral-700 w-full truncate">${PREMIOS[num]}</div>
+                `;
+                container.appendChild(card);
+            });
         }
-
-        window.probarNotificacion = function() {
-            if ("Notification" in window && Notification.permission === "granted") {
-                new Notification("🧪 Prueba de Notificación Rifa", {
-                    body: "Las alertas en vivo funcionan correctamente en tu celular.",
-                    icon: "https://cdn-icons-png.flaticon.com/512/3112/3112905.png"
-                });
-            } else {
-                solicitarPermisoNotificaciones();
-            }
-        };
-
-        function enviarNotificacionActualizacion(data) {
-            if ("Notification" in window && Notification.permission === "granted") {
-                const aleatorio = data.ultimoAleatorio || "N/A";
-                const restantes = data.disponiblesGlobal !== undefined ? Number(data.disponiblesGlobal).toLocaleString() : "N/A";
-                
-                new Notification("🔄 Actualización de Rifa", {
-                    body: `Último azar: ${aleatorio} | Boletos libres: ${restantes}`,
-                    icon: "https://cdn-icons-png.flaticon.com/512/3112/3112905.png"
-                });
-            }
-        }
+        renderizarBase();
 
         function escucharFirestoreDirecto() {
             const refDoc = doc(db, "rifa_estado", "actual");
@@ -240,37 +203,32 @@
                 document.getElementById('cloudStatus').innerText = "EN VIVO";
                 document.getElementById('cloudStatus').className = "text-[0.65rem] font-bold text-green-700";
                 document.getElementById('dotStatus').className = "w-2 h-2 bg-green-500 rounded-full animate-pulse";
-                
-                if (Notification.permission === "granted") actualizarBotonNotif(true);
 
-                // Si el documento en Firestore está vacío o no existe aún, data será un objeto vacío
-                const data = snap.exists() ? snap.data() : {};
-                eventosGlobales = data.eventos || [];
-                
-                // RENDERIZAR SIEMPRE
-                renderizarBendecidos(data);
-                aplicarFiltrosTabla();
+                if (snap.exists()) {
+                    const data = snap.data();
+                    eventosGlobales = data.eventos || [];
+                    renderizarBendecidos(data);
+                    aplicarFiltrosTabla();
+                }
             }, (error) => {
                 console.error("Error al escuchar Firestore:", error);
-                document.getElementById('cloudStatus').innerText = "ERR: " + error.code;
+                document.getElementById('cloudStatus').innerText = "ERROR";
                 document.getElementById('cloudStatus').className = "text-[0.65rem] font-bold text-red-600";
-                document.getElementById('dotStatus').className = "w-2 h-2 bg-red-500 rounded-full";
             });
         }
 
         function renderizarBendecidos(data) {
-            const boletosObj = (data && data.boletos) ? data.boletos : {};
-            const ultimoAzar = (data && data.ultimoAleatorio) ? data.ultimoAleatorio : null;
+            const boletosObj = data.boletos || {};
+            const ultimoAzar = data.ultimoAleatorio || null;
 
-            document.getElementById('statRestantes').innerText = (data && data.disponiblesGlobal !== undefined) ? Number(data.disponiblesGlobal).toLocaleString() : "100,000";
-            document.getElementById('statVendidos').innerText = (data && data.vendidosGlobal !== undefined) ? `#${Number(data.vendidosGlobal).toLocaleString()}` : "#0";
+            document.getElementById('statRestantes').innerText = data.disponiblesGlobal !== undefined ? Number(data.disponiblesGlobal).toLocaleString() : "100,000";
+            document.getElementById('statVendidos').innerText = data.vendidosGlobal !== undefined ? `#${Number(data.vendidosGlobal).toLocaleString()}` : "#0";
 
             const container = document.getElementById('gridBendecidos');
             container.innerHTML = "";
 
             let ganadoresCount = 0;
 
-            // Dibuja las tarjetas obligatoriamente en pantalla
             LISTA_BENDECIDOS.forEach(num => {
                 const b = boletosObj[num] || {};
                 const estado = b.resultado || "disponible";
@@ -306,7 +264,6 @@
                 container.appendChild(card);
             });
 
-            // Tarjeta Aleatorio
             if (ultimoAzar) {
                 const bAzar = boletosObj[ultimoAzar] || {};
                 const estadoAzar = bAzar.resultado || "disponible";
@@ -338,11 +295,6 @@
                     </div>
                 `;
                 container.appendChild(cardAzar);
-            }
-
-            if (data && data.actualizadoEn && data.actualizadoEn !== ultimaRevisionTimestamp) {
-                ultimaRevisionTimestamp = data.actualizadoEn;
-                enviarNotificacionActualizacion(data);
             }
 
             document.getElementById('statGanadores').innerText = ganadoresCount;
@@ -402,7 +354,6 @@
             });
         };
 
-        // Iniciar
         escucharFirestoreDirecto();
     </script>
 </body>
