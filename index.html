@@ -3,136 +3,121 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitoreo Rifa - En Vivo (Cloud)</title>
-    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <title>Stickers Bendecidos - Responsive & Alertas</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'JetBrains Mono', monospace; }
-        body {
-            background: #f4f0ea; color: #1a1a1a; height: 100vh; width: 100vw;
-            display: flex; justify-content: center; align-items: center; overflow: hidden;
-        }
-        .main-container {
-            width: 96vw; height: 95vh; background: #eae5dc; border: 2px solid #1a1a1a;
-            border-radius: 12px; box-shadow: 0 15px 35px rgba(0,0,0,0.15);
-            display: flex; flex-direction: column; overflow: hidden; padding: 20px; gap: 14px;
-        }
-        header {
-            display: flex; justify-content: space-between; align-items: center;
-            border-bottom: 2px solid #1a1a1a; padding-bottom: 12px;
-        }
-        .title-area h1 { font-family: 'Instrument Serif', serif; font-size: 2.2rem; font-weight: normal; line-height: 1; }
-        .cloud-status { font-size: 0.75rem; background: #1a1a1a; color: #f4f0ea; padding: 4px 10px; border-radius: 20px; font-weight: bold; }
-
-        .toolbar {
-            display: flex; gap: 10px; align-items: center; background: #dfd9ce; padding: 10px; border-radius: 8px; border: 1px solid #c8c0b0;
-        }
-        .toolbar input, .toolbar select {
-            background: #fff; border: 1px solid #1a1a1a; padding: 6px 10px; border-radius: 4px; font-size: 0.8rem; outline: none;
-        }
-        .toolbar input { flex: 1; }
-
-        .content-grid {
-            flex: 1; display: grid; grid-template-columns: 1.2fr 1fr; gap: 14px; overflow: hidden;
-        }
-        .panel {
-            background: #fff; border: 1px solid #1a1a1a; border-radius: 8px; padding: 14px;
-            display: flex; flex-direction: column; gap: 10px; overflow: hidden; box-shadow: 2px 2px 0px #1a1a1a;
-        }
-        .panel-title { font-size: 0.9rem; font-weight: bold; border-bottom: 1px solid #ddd; padding-bottom: 6px; text-transform: uppercase; }
+        body { font-family: 'JetBrains Mono', monospace; background-color: #f4f0ea; color: #1a1a1a; }
+        .font-pixel { font-family: 'Silkscreen', cursive; }
         
-        .scroll-box {
-            flex: 1; overflow-y: auto; border: 1px solid #eee; border-radius: 4px; padding: 4px;
+        /* Grid inteligente para ver más tarjetas en celular */
+        .responsive-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 0.6rem;
         }
-        table { width: 100%; border-collapse: collapse; font-size: 0.75rem; text-align: left; }
-        th { background: #1a1a1a; color: #fff; padding: 6px; position: sticky; top: 0; font-size: 0.7rem; }
-        td { padding: 6px; border-bottom: 1px solid #eee; }
 
-        .badge { padding: 2px 6px; border-radius: 3px; font-weight: bold; font-size: 0.65rem; text-transform: uppercase; }
-        .est-confirmado { background: #d1fae5; color: #065f46; border: 1px solid #34d399; }
-        .est-disponible { background: #dbeafe; color: #1e40af; border: 1px solid #60a5fa; }
-        .est-pendiente { background: #fef3c7; color: #92400e; border: 1px solid #fbbf24; }
-        .est-desconocido, .est-sin-consultar { background: #f3f4f6; color: #4b5563; }
-
-        .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-        .stat-card { background: #f9f8f6; border: 1px solid #1a1a1a; border-radius: 6px; padding: 10px; text-align: center; }
-        .stat-val { font-size: 1.2rem; font-weight: bold; }
-        .stat-lbl { font-size: 0.65rem; color: #666; text-transform: uppercase; }
+        @media (min-width: 640px) {
+            .responsive-grid {
+                grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+                gap: 0.8rem;
+            }
+        }
+        
+        .pixel-card {
+            background: #111813;
+            border: 2px solid #22c55e;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+        
+        .pixel-card-gold {
+            background: #1c1708;
+            border: 2px solid #eab308;
+            box-shadow: 0 4px 14px rgba(234, 179, 8, 0.2);
+        }
     </style>
 </head>
-<body>
+<body class="min-h-screen w-screen flex flex-col items-center justify-start sm:justify-center p-2 sm:p-4 overflow-x-hidden">
 
-    <div class="main-container">
-        <header>
-            <div class="title-area">
-                <h1>Visor Remoto de Rifa</h1>
+    <div class="w-full max-w-5xl flex flex-col gap-3">
+        
+        <!-- Header Principal -->
+        <header class="flex flex-col sm:flex-row justify-between items-center border-2 border-[#1a1a1a] bg-[#eae5dc] p-3 rounded-xl shadow-md gap-2">
+            <div class="flex items-center gap-2">
+                <span class="text-xl">👑</span>
+                <h1 class="font-pixel text-base sm:text-xl text-amber-600 tracking-wider">STICKERS BENDECIDOS</h1>
             </div>
-            <div id="cloudStatus" class="cloud-status">Conectando a Firebase...</div>
+            
+            <div class="flex flex-wrap items-center justify-center gap-2 w-full sm:w-auto">
+                <button id="btnNotificaciones" onclick="solicitarPermisoNotificaciones()" class="bg-amber-500 hover:bg-amber-600 text-black px-2.5 py-1 rounded-lg text-[0.7rem] font-extrabold cursor-pointer transition">
+                    🔔 Activar Alertas
+                </button>
+                
+                <button onclick="probarNotificacion()" class="bg-neutral-800 hover:bg-black text-amber-400 border border-amber-500/50 px-2.5 py-1 rounded-lg text-[0.7rem] font-extrabold cursor-pointer">
+                    🧪 Probar Alerta
+                </button>
+
+                <div class="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-lg border border-[#1a1a1a]">
+                    <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                    <span id="cloudStatus" class="text-[0.65rem] font-bold text-green-700">CONECTANDO...</span>
+                </div>
+            </div>
         </header>
 
-        <div class="stats-row">
-            <div class="stat-card">
-                <div id="statRestantes" class="stat-val">--</div>
-                <div class="stat-lbl">Boletos Restantes (Global)</div>
+        <!-- Barra de Estadísticas Globales -->
+        <div class="grid grid-cols-3 gap-2">
+            <div class="bg-white border-2 border-[#1a1a1a] p-2 rounded-lg text-center shadow-sm">
+                <div class="text-[0.55rem] sm:text-[0.65rem] text-neutral-500 font-bold uppercase">Restantes</div>
+                <div id="statRestantes" class="text-base sm:text-lg font-extrabold text-neutral-900">--</div>
             </div>
-            <div class="stat-card">
-                <div id="statVendidos" class="stat-val">--</div>
-                <div class="stat-lbl">Vendidos Aprox. (Global)</div>
+            <div class="bg-white border-2 border-[#1a1a1a] p-2 rounded-lg text-center shadow-sm">
+                <div class="text-[0.55rem] sm:text-[0.65rem] text-neutral-500 font-bold uppercase">Vendidos Aprox.</div>
+                <div id="statVendidos" class="text-base sm:text-lg font-extrabold text-amber-600">--</div>
             </div>
-            <div class="stat-card">
-                <div id="statConfirmados" class="stat-val">0</div>
-                <div class="stat-lbl">Monitoreados Confirmados</div>
+            <div class="bg-white border-2 border-[#1a1a1a] p-2 rounded-lg text-center shadow-sm">
+                <div class="text-[0.55rem] sm:text-[0.65rem] text-neutral-500 font-bold uppercase">Ganadores</div>
+                <div id="statGanadores" class="text-base sm:text-lg font-extrabold text-emerald-600">0</div>
             </div>
         </div>
 
-        <div class="toolbar">
-            <input type="text" id="inputBuscar" placeholder="🔍 Buscar número de boleto (ej. 00000)..." oninput="filtrarDatos()">
-            <select id="selectEstado" onchange="filtrarDatos()">
-                <option value="todos">Todos los estados</option>
-                <option value="confirmado">Confirmados</option>
-                <option value="disponible">Disponibles</option>
-                <option value="pendiente">Pendientes</option>
-                <option value="desconocido">Desconocidos</option>
-            </select>
+        <!-- Grid de Cards Responsive (Para ver más números en celular) -->
+        <div id="gridBendecidos" class="responsive-grid">
+            <div class="col-span-full text-center py-6 text-neutral-500 font-bold text-xs">Cargando estado en vivo...</div>
         </div>
 
-        <div class="content-grid">
-            <div class="panel">
-                <div class="panel-title">🎟️ Estado Actual de Tickets Monitoreados</div>
-                <div class="scroll-box">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Boleto</th>
-                                <th>Estado</th>
-                                <th>Posición Venta Aprox.</th>
-                                <th>Última Consulta</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tablaBoletos"></tbody>
-                    </table>
+        <!-- Sección Inferior -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <!-- Registro de Actividad -->
+            <div class="bg-white border-2 border-[#1a1a1a] rounded-xl p-2.5 flex flex-col gap-1.5 shadow-sm">
+                <div class="text-[0.7rem] font-bold text-neutral-800 uppercase border-b border-neutral-200 pb-1 flex justify-between">
+                    <span>📜 Registro de Actividad</span>
+                    <span class="text-emerald-600">En vivo</span>
+                </div>
+                <div id="boxLogs" class="h-24 overflow-y-auto bg-[#070d0a] text-green-400 p-2 rounded text-[0.65rem] font-mono leading-relaxed border border-neutral-800">
+                    <div>[${new Date().toLocaleTimeString()}] Inicializando módulos de red...</div>
                 </div>
             </div>
 
-            <div class="panel">
-                <div class="panel-title">📜 Bitácora Histórica de Cambios</div>
-                <div class="scroll-box">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Hora</th>
-                                <th>Boleto</th>
-                                <th>Transición</th>
-                                <th>Posición</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tablaEventos"></tbody>
-                    </table>
+            <!-- Base de Datos (Wikipedia) -->
+            <div class="bg-white border-2 border-[#1a1a1a] rounded-xl p-2.5 flex flex-col gap-1.5 shadow-sm">
+                <div class="text-[0.7rem] font-bold text-neutral-800 uppercase border-b border-neutral-200 pb-1">
+                    📖 Base de Datos (Wikipedia)
+                </div>
+                <div id="boxWiki" class="h-24 overflow-y-auto text-neutral-700 text-[0.65rem] p-1 leading-tight">
+                    Cargando información externa...
                 </div>
             </div>
         </div>
+
+        <!-- Footer / Barra de Estado -->
+        <footer class="bg-white border-2 border-[#1a1a1a] p-2.5 rounded-xl flex justify-between items-center text-[0.65rem] sm:text-xs font-bold text-neutral-700 shadow-sm">
+            <span>🟢 ALEATORIO ACTUAL: <span id="txtUltimoAleatorio" class="text-amber-600 font-extrabold">-----</span></span>
+            <span id="txtUltimaHora">--:--:--</span>
+        </footer>
+
     </div>
 
-    <!-- Firebase SDKs -->
+    <!-- Firebase SDK Modular -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
@@ -152,93 +137,168 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        let datosGlobales = { boletos: {}, eventos: [] };
+        const LISTA_BENDECIDOS = ["00000", "11111", "22222", "33333", "44444", "55555", "66666", "77777"];
+        const PREMIOS = {
+            "00000": "IPHONE",
+            "11111": "RD$50,000",
+            "22222": "IPHONE",
+            "33333": "RD$25,000",
+            "44444": "IPHONE",
+            "55555": "RD$50,000",
+            "66666": "IPHONE",
+            "77777": "RD$25,000"
+        };
 
-        // Login automático en la web remota
+        let ultimaRevisionTimestamp = null;
+
+        // Solicitar Permiso de Notificaciones Flotantes
+        window.solicitarPermisoNotificaciones = function() {
+            if ("Notification" in window) {
+                Notification.requestPermission().then(perm => {
+                    if (perm === "granted") {
+                        alert("✅ Notificaciones activadas en pantalla.");
+                        actualizarBotonNotif(true);
+                    } else {
+                        alert("⚠️ No se concedió permiso para notificaciones.");
+                    }
+                });
+            } else {
+                alert("Este navegador no soporta notificaciones.");
+            }
+        };
+
+        function actualizarBotonNotif(activas) {
+            const btn = document.getElementById('btnNotificaciones');
+            if (activas) {
+                btn.innerText = "🔔 Alertas Activas";
+                btn.className = "bg-green-600 text-white px-2.5 py-1 rounded-lg text-[0.7rem] font-extrabold";
+            }
+        }
+
+        // Función para probar notificaciones manualmente
+        window.probarNotificacion = function() {
+            if ("Notification" in window && Notification.permission === "granted") {
+                new Notification("🧪 Prueba de Notificación Rifa", {
+                    body: "Las alertas en vivo están configuradas correctamente en tu dispositivo.",
+                    icon: "https://cdn-icons-png.flaticon.com/512/3112/3112905.png"
+                });
+            } else {
+                solicitarPermisoNotificaciones();
+            }
+        };
+
+        function enviarNotificacionActualizacion(data) {
+            if ("Notification" in window && Notification.permission === "granted") {
+                const aleatorio = data.ultimoAleatorio || "N/A";
+                const restantes = data.disponiblesGlobal !== undefined ? data.disponiblesGlobal.toLocaleString() : "N/A";
+                
+                new Notification("🔄 Actualización de Ciclo Rifa", {
+                    body: `Último azar: ${aleatorio} | Boletos libres restantes: ${restantes}`,
+                    icon: "https://cdn-icons-png.flaticon.com/512/3112/3112905.png"
+                });
+            }
+        }
+
+        // Cargar Wikipedia
+        async function cargarWiki() {
+            try {
+                const res = await fetch("https://es.wikipedia.org/api/rest_v1/page/summary/Loter%C3%ADa");
+                const data = await res.json();
+                if (data.extract) {
+                    document.getElementById("boxWiki").innerHTML = `<strong>Lotería:</strong> ${data.extract}`;
+                }
+            } catch (e) {
+                document.getElementById("boxWiki").innerText = "No se pudo sincronizar la base externa.";
+            }
+        }
+        cargarWiki();
+
+        function logPb(msg) {
+            const box = document.getElementById("boxLogs");
+            if (!box) return;
+            const hora = new Date().toLocaleTimeString();
+            box.innerHTML += `<div>[${hora}] ${msg}</div>`;
+            box.scrollTop = box.scrollHeight;
+        }
+
+        // Login Firebase
         signInWithEmailAndPassword(auth, "pe@gmail.com", "1234567890")
             .then(() => {
-                document.getElementById('cloudStatus').innerText = "🟢 Conectado en Tiempo Real";
+                document.getElementById('cloudStatus').innerText = "EN VIVO";
+                if (Notification.permission === "granted") actualizarBotonNotif(true);
                 escucharFirebase();
             })
             .catch(err => {
-                document.getElementById('cloudStatus').innerText = "❌ Error Auth";
+                document.getElementById('cloudStatus').innerText = "ERROR AUTH";
                 console.error(err);
             });
 
         function escucharFirebase() {
-            const ref = doc(db, "rifa_estado", "actual");
-            onSnapshot(ref, (docSnap) => {
-                if (docSnap.exists()) {
-                    datosGlobales = docSnap.data();
-                    renderizarPantalla(datosGlobales);
-                } else {
-                    console.log("Esperando datos del script local...");
+            const refDoc = doc(db, "rifa_estado", "actual");
+            onSnapshot(refDoc, (snap) => {
+                if (snap.exists()) {
+                    const data = snap.data();
+                    renderizarBendecidos(data);
                 }
             });
         }
 
-        window.renderizarPantalla = function(data) {
+        function renderizarBendecidos(data) {
             const boletosObj = data.boletos || {};
-            const eventosArr = data.eventos || [];
 
             document.getElementById('statRestantes').innerText = data.disponiblesGlobal !== undefined ? data.disponiblesGlobal.toLocaleString() : "--";
             document.getElementById('statVendidos').innerText = data.vendidosGlobal !== undefined ? `#${data.vendidosGlobal.toLocaleString()}` : "--";
+            document.getElementById('txtUltimoAleatorio').innerText = data.ultimoAleatorio || "-----";
 
-            window._cacheBoletos = boletosObj;
-            window._cacheEventos = eventosArr;
-            filtrarDatos();
-        }
+            const container = document.getElementById('gridBendecidos');
+            container.innerHTML = "";
 
-        window.filtrarDatos = function() {
-            const textoBusqueda = document.getElementById('inputBuscar').value.trim();
-            const filtroEstado = document.getElementById('selectEstado').value;
-            const boletosObj = window._cacheBoletos || {};
-            const eventosArr = window._cacheEventos || [];
+            let ganadoresCount = 0;
 
-            const tbodyBoletos = document.getElementById('tablaBoletos');
-            tbodyBoletos.innerHTML = "";
+            LISTA_BENDECIDOS.forEach(num => {
+                const b = boletosObj[num] || {};
+                const estado = b.resultado || "disponible";
+                const esGanador = estado === "confirmado";
+                if (esGanador) ganadoresCount++;
 
-            let confirmadosCount = 0;
-            const chaves = Object.keys(boletosObj);
+                const posStr = b.posicionAprox ? `#${b.posicionAprox.toLocaleString()}` : "#--";
+                const premioStr = PREMIOS[num] || "BONO";
 
-            chaves.forEach(num => {
-                const b = boletosObj[num];
-                const estado = b.resultado || "desconocido";
-                if (estado === "confirmado") confirmadosCount++;
+                const card = document.createElement('div');
+                card.className = esGanador 
+                    ? "pixel-card-gold p-2.5 rounded-lg flex flex-col justify-between items-center text-center gap-1 text-amber-200"
+                    : "pixel-card p-2.5 rounded-lg flex flex-col justify-between items-center text-center gap-1 text-green-400";
 
-                // Aplicar filtros
-                if (textoBusqueda && !num.includes(textoBusqueda)) return;
-                if (filtroEstado !== "todos" && estado !== filtroEstado) return;
+                card.innerHTML = `
+                    <div class="flex items-center gap-1 text-[0.55rem] font-bold uppercase tracking-wide ${esGanador ? 'text-yellow-400' : 'text-neutral-400'}">
+                        <span>${esGanador ? '🏆' : '🎁'}</span>
+                        <span class="truncate">${esGanador ? 'GANADOR' : 'LIBRE'}</span>
+                    </div>
 
-                const hora = b.consulta ? new Date(b.consulta).toLocaleTimeString() : "N/A";
-                const pos = b.posicionAprox ? `#${b.posicionAprox.toLocaleString()}` : "N/A";
+                    <div class="text-xl sm:text-2xl font-extrabold tracking-wider ${esGanador ? 'text-yellow-300' : 'text-white'}">
+                        ${num}
+                    </div>
 
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><strong>${num}</strong></td>
-                    <td><span class="badge est-${estado}">${estado}</span></td>
-                    <td style="color: #047857; font-weight:bold;">${pos}</td>
-                    <td>${hora}</td>
+                    <div class="text-[0.6rem] font-bold text-emerald-300 bg-[#080d09] px-1.5 py-0.5 rounded border border-[#15803d] w-full truncate">
+                        ${posStr}
+                    </div>
+
+                    <div class="text-[0.55rem] font-extrabold tracking-wide uppercase ${esGanador ? 'text-yellow-400' : 'text-neutral-300'} pt-0.5 border-t border-neutral-700 w-full truncate">
+                        ${premioStr}
+                    </div>
                 `;
-                tbodyBoletos.appendChild(tr);
+                container.appendChild(card);
             });
 
-            document.getElementById('statConfirmados').innerText = confirmadosCount;
+            // Si hay una actualización nueva enviada desde la consola
+            if (data.actualizadoEn && data.actualizadoEn !== ultimaRevisionTimestamp) {
+                ultimaRevisionTimestamp = data.actualizadoEn;
+                logPb(`Ciclo actualizado en nube. Azar: ${data.ultimoAleatorio || 'N/A'}`);
+                enviarNotificacionActualizacion(data);
+            }
 
-            // Renderizar eventos
-            const tbodyEventos = document.getElementById('tablaEventos');
-            tbodyEventos.innerHTML = "";
-            eventosArr.slice().reverse().forEach(ev => {
-                const horaEv = ev.detectado ? new Date(ev.detectado).toLocaleTimeString() : "N/A";
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${horaEv}</td>
-                    <td><strong>${ev.boleto}</strong></td>
-                    <td>${ev.anterior || 'inicio'} ➔ <span class="badge est-${ev.estado}">${ev.estado}</span></td>
-                    <td style="color: #047857; font-weight:bold;">#${ev.vendidos ? ev.vendidos.toLocaleString() : 'N/A'}</td>
-                `;
-                tbodyEventos.appendChild(tr);
-            });
+            document.getElementById('statGanadores').innerText = ganadoresCount;
+            document.getElementById('txtUltimaHora').innerText = "Act: " + new Date().toLocaleTimeString();
         }
     </script>
 </body>
