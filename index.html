@@ -87,17 +87,17 @@
 
         <!-- Grid de Cards Responsive -->
         <div id="gridBendecidos" class="responsive-grid">
-            <div class="col-span-full text-center py-6 text-neutral-500 font-bold text-xs">Cargando datos en tiempo real...</div>
+            <div class="col-span-full text-center py-6 text-neutral-500 font-bold text-xs">Cargando interfaz...</div>
         </div>
 
-        <!-- Panel de Filtros & Tabla Histórica (Fondo Negro - Contraste Blanco) -->
+        <!-- Panel de Filtros & Tabla Histórica -->
         <div class="bg-white border-2 border-[#1a1a1a] rounded-xl p-3 flex flex-col gap-3 shadow-md">
             <div class="text-xs font-bold text-neutral-900 uppercase border-b border-neutral-200 pb-2 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-1">
                 <span class="flex items-center gap-1">📊 AUDITORÍA DE VENTAS POR RANGO & HORA</span>
                 <span id="countFiltrados" class="text-[0.65rem] text-amber-800 font-extrabold bg-amber-100 px-2.5 py-0.5 rounded border border-amber-300">0 REGISTROS</span>
             </div>
 
-            <!-- Módulo de Filtros en Fondo Negro y Letras Blancas -->
+            <!-- Módulo de Filtros (Fondo Negro) -->
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-[#0f1410] p-3 rounded-lg border-2 border-[#1a1a1a] text-[0.7rem]">
                 <div>
                     <label class="block text-white font-extrabold mb-1">Buscar Ticket:</label>
@@ -139,7 +139,7 @@
                     </thead>
                     <tbody id="tablaHistorial">
                         <tr>
-                            <td colspan="5" class="p-4 text-center text-neutral-500 font-bold">Esperando eventos históricos...</td>
+                            <td colspan="5" class="p-4 text-center text-neutral-500 font-bold">Sin eventos registrados aún.</td>
                         </tr>
                     </tbody>
                 </table>
@@ -224,7 +224,7 @@
         function enviarNotificacionActualizacion(data) {
             if ("Notification" in window && Notification.permission === "granted") {
                 const aleatorio = data.ultimoAleatorio || "N/A";
-                const restantes = data.disponiblesGlobal !== undefined ? data.disponiblesGlobal.toLocaleString() : "N/A";
+                const restantes = data.disponiblesGlobal !== undefined ? Number(data.disponiblesGlobal).toLocaleString() : "N/A";
                 
                 new Notification("🔄 Actualización de Rifa", {
                     body: `Último azar: ${aleatorio} | Boletos libres: ${restantes}`,
@@ -237,46 +237,47 @@
             const refDoc = doc(db, "rifa_estado", "actual");
             
             onSnapshot(refDoc, (snap) => {
-                if (snap.exists()) {
-                    document.getElementById('cloudStatus').innerText = "EN VIVO";
-                    document.getElementById('cloudStatus').className = "text-[0.65rem] font-bold text-green-700";
-                    document.getElementById('dotStatus').className = "w-2 h-2 bg-green-500 rounded-full animate-pulse";
-                    
-                    if (Notification.permission === "granted") actualizarBotonNotif(true);
+                document.getElementById('cloudStatus').innerText = "EN VIVO";
+                document.getElementById('cloudStatus').className = "text-[0.65rem] font-bold text-green-700";
+                document.getElementById('dotStatus').className = "w-2 h-2 bg-green-500 rounded-full animate-pulse";
+                
+                if (Notification.permission === "granted") actualizarBotonNotif(true);
 
-                    const data = snap.data();
-                    eventosGlobales = data.eventos || [];
-                    
-                    renderizarBendecidos(data);
-                    aplicarFiltrosTabla();
-                }
+                // Si el documento en Firestore está vacío o no existe aún, data será un objeto vacío
+                const data = snap.exists() ? snap.data() : {};
+                eventosGlobales = data.eventos || [];
+                
+                // RENDERIZAR SIEMPRE
+                renderizarBendecidos(data);
+                aplicarFiltrosTabla();
             }, (error) => {
                 console.error("Error al escuchar Firestore:", error);
-                document.getElementById('cloudStatus').innerText = "ERROR LECTURA";
+                document.getElementById('cloudStatus').innerText = "ERR: " + error.code;
                 document.getElementById('cloudStatus').className = "text-[0.65rem] font-bold text-red-600";
                 document.getElementById('dotStatus').className = "w-2 h-2 bg-red-500 rounded-full";
             });
         }
 
         function renderizarBendecidos(data) {
-            const boletosObj = data.boletos || {};
-            const ultimoAzar = data.ultimoAleatorio || null;
+            const boletosObj = (data && data.boletos) ? data.boletos : {};
+            const ultimoAzar = (data && data.ultimoAleatorio) ? data.ultimoAleatorio : null;
 
-            document.getElementById('statRestantes').innerText = data.disponiblesGlobal !== undefined ? data.disponiblesGlobal.toLocaleString() : "--";
-            document.getElementById('statVendidos').innerText = data.vendidosGlobal !== undefined ? `#${data.vendidosGlobal.toLocaleString()}` : "--";
+            document.getElementById('statRestantes').innerText = (data && data.disponiblesGlobal !== undefined) ? Number(data.disponiblesGlobal).toLocaleString() : "100,000";
+            document.getElementById('statVendidos').innerText = (data && data.vendidosGlobal !== undefined) ? `#${Number(data.vendidosGlobal).toLocaleString()}` : "#0";
 
             const container = document.getElementById('gridBendecidos');
             container.innerHTML = "";
 
             let ganadoresCount = 0;
 
+            // Dibuja las tarjetas obligatoriamente en pantalla
             LISTA_BENDECIDOS.forEach(num => {
                 const b = boletosObj[num] || {};
                 const estado = b.resultado || "disponible";
                 const esGanador = estado === "confirmado";
                 if (esGanador) ganadoresCount++;
 
-                const posStr = b.posicionAprox ? `#${b.posicionAprox.toLocaleString()}` : "#--";
+                const posStr = b.posicionAprox ? `#${Number(b.posicionAprox).toLocaleString()}` : "#--";
                 const premioStr = PREMIOS[num] || "BONO";
 
                 const card = document.createElement('div');
@@ -305,10 +306,11 @@
                 container.appendChild(card);
             });
 
+            // Tarjeta Aleatorio
             if (ultimoAzar) {
                 const bAzar = boletosObj[ultimoAzar] || {};
                 const estadoAzar = bAzar.resultado || "disponible";
-                const posAzarStr = bAzar.posicionAprox ? `#${bAzar.posicionAprox.toLocaleString()}` : "#--";
+                const posAzarStr = bAzar.posicionAprox ? `#${Number(bAzar.posicionAprox).toLocaleString()}` : "#--";
 
                 let estadoEstilo = "text-purple-300";
                 if (estadoAzar === "confirmado") estadoEstilo = "text-emerald-400";
@@ -338,7 +340,7 @@
                 container.appendChild(cardAzar);
             }
 
-            if (data.actualizadoEn && data.actualizadoEn !== ultimaRevisionTimestamp) {
+            if (data && data.actualizadoEn && data.actualizadoEn !== ultimaRevisionTimestamp) {
                 ultimaRevisionTimestamp = data.actualizadoEn;
                 enviarNotificacionActualizacion(data);
             }
@@ -360,7 +362,7 @@
                 if (ticketQuery && !ev.boleto.includes(ticketQuery)) return false;
                 if (estadoSel !== "todos" && ev.estado !== estadoSel) return false;
 
-                const pos = ev.vendidos !== undefined && ev.vendidos !== null ? Number(ev.vendidos) : null;
+                const pos = (ev.vendidos !== undefined && ev.vendidos !== null) ? Number(ev.vendidos) : null;
                 if (posMin !== null && (pos === null || pos < posMin)) return false;
                 if (posMax !== null && (pos === null || pos > posMax)) return false;
 
@@ -370,15 +372,15 @@
             document.getElementById('countFiltrados').innerText = `${filtrados.length} REGISTROS`;
 
             if (filtrados.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-neutral-500 font-bold">No hay eventos que coincidan con los filtros aplicados.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-neutral-500 font-bold">Sin eventos registrados aún.</td></tr>`;
                 return;
             }
 
             filtrados.slice().reverse().forEach(ev => {
                 const fechaObj = ev.detectado ? new Date(ev.detectado) : null;
                 const horaStr = fechaObj ? `${fechaObj.toLocaleDateString()} ${fechaObj.toLocaleTimeString()}` : "N/A";
-                const posStr = ev.vendidos ? `#${ev.vendidos.toLocaleString()}` : "N/A";
-                const libresStr = ev.disponibles ? ev.disponibles.toLocaleString() : "N/A";
+                const posStr = ev.vendidos ? `#${Number(ev.vendidos).toLocaleString()}` : "N/A";
+                const libresStr = ev.disponibles ? Number(ev.disponibles).toLocaleString() : "N/A";
 
                 let badgeEstado = "bg-neutral-100 text-neutral-800 border border-neutral-400 font-bold";
                 if (ev.estado === "confirmado") badgeEstado = "bg-emerald-100 text-emerald-900 border border-emerald-400 font-extrabold";
@@ -400,6 +402,7 @@
             });
         };
 
+        // Iniciar
         escucharFirestoreDirecto();
     </script>
 </body>
