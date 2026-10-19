@@ -23,18 +23,28 @@
             }
         }
         
+        /* Card Disponible (Verde) */
         .pixel-card {
             background: #111813;
             border: 2px solid #22c55e;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         }
         
+        /* Card Ganador / Confirmado (Dorado) */
         .pixel-card-gold {
             background: #1c1708;
             border: 2px solid #eab308;
             box-shadow: 0 4px 14px rgba(234, 179, 8, 0.2);
         }
 
+        /* Card Pendiente de Pago (Naranja / Ámbar) */
+        .pixel-card-amber {
+            background: #241705;
+            border: 2px solid #f97316;
+            box-shadow: 0 4px 14px rgba(249, 115, 22, 0.25);
+        }
+
+        /* Card Aleatorio Reciente (Púrpura) */
         .pixel-card-azar {
             background: #18151f;
             border: 2px solid #a855f7;
@@ -233,31 +243,58 @@
                 const b = boletosObj[num] || {};
                 const estado = b.resultado || "disponible";
                 const esGanador = estado === "confirmado";
+                const esPendiente = estado === "pendiente";
+
                 if (esGanador) ganadoresCount++;
 
                 const posStr = b.posicionAprox ? `#${Number(b.posicionAprox).toLocaleString()}` : "#--";
                 const premioStr = PREMIOS[num] || "BONO";
 
+                // Definición visual según el estado del boleto
+                let cardStyle = "pixel-card p-2.5 rounded-lg flex flex-col justify-between items-center text-center gap-1 text-green-400";
+                let iconHeader = "🎁";
+                let textHeader = "DISPONIBLE";
+                let textHeaderColor = "text-neutral-400";
+                let numberColor = "text-white";
+                let badgePosStyle = "text-emerald-300 bg-[#080d09] border-[#15803d]";
+                let premioColor = "text-neutral-300";
+
+                if (esGanador) {
+                    cardStyle = "pixel-card-gold p-2.5 rounded-lg flex flex-col justify-between items-center text-center gap-1 text-amber-200";
+                    iconHeader = "🏆";
+                    textHeader = "GANADOR";
+                    textHeaderColor = "text-yellow-400";
+                    numberColor = "text-yellow-300";
+                    badgePosStyle = "text-yellow-300 bg-[#171305] border-[#a16207]";
+                    premioColor = "text-yellow-400";
+                } else if (esPendiente) {
+                    cardStyle = "pixel-card-amber p-2.5 rounded-lg flex flex-col justify-between items-center text-center gap-1 text-amber-300";
+                    iconHeader = "⏳";
+                    textHeader = "PENDIENTE PAGO";
+                    textHeaderColor = "text-orange-400 font-extrabold";
+                    numberColor = "text-orange-300";
+                    badgePosStyle = "text-orange-300 bg-[#1a0f03] border-[#c2410c]";
+                    premioColor = "text-orange-400";
+                }
+
                 const card = document.createElement('div');
-                card.className = esGanador 
-                    ? "pixel-card-gold p-2.5 rounded-lg flex flex-col justify-between items-center text-center gap-1 text-amber-200"
-                    : "pixel-card p-2.5 rounded-lg flex flex-col justify-between items-center text-center gap-1 text-green-400";
+                card.className = cardStyle;
 
                 card.innerHTML = `
-                    <div class="flex items-center gap-1 text-[0.55rem] font-bold uppercase tracking-wide ${esGanador ? 'text-yellow-400' : 'text-neutral-400'}">
-                        <span>${esGanador ? '🏆' : '🎁'}</span>
-                        <span class="truncate">${esGanador ? 'GANADOR' : 'DISPONIBLE'}</span>
+                    <div class="flex items-center gap-1 text-[0.55rem] font-bold uppercase tracking-wide ${textHeaderColor}">
+                        <span>${iconHeader}</span>
+                        <span class="truncate">${textHeader}</span>
                     </div>
 
-                    <div class="text-xl sm:text-2xl font-extrabold tracking-wider ${esGanador ? 'text-yellow-300' : 'text-white'}">
+                    <div class="text-xl sm:text-2xl font-extrabold tracking-wider ${numberColor}">
                         ${num}
                     </div>
 
-                    <div class="text-[0.6rem] font-bold text-emerald-300 bg-[#080d09] px-1.5 py-0.5 rounded border border-[#15803d] w-full truncate">
+                    <div class="text-[0.6rem] font-bold px-1.5 py-0.5 rounded border w-full truncate ${badgePosStyle}">
                         ${posStr}
                     </div>
 
-                    <div class="text-[0.55rem] font-extrabold tracking-wide uppercase ${esGanador ? 'text-yellow-400' : 'text-neutral-300'} pt-0.5 border-t border-neutral-700 w-full truncate">
+                    <div class="text-[0.55rem] font-extrabold tracking-wide uppercase ${premioColor} pt-0.5 border-t border-neutral-700 w-full truncate">
                         ${premioStr}
                     </div>
                 `;
