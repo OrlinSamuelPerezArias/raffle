@@ -133,7 +133,7 @@
                             <th class="p-2 border-b border-neutral-700">Fecha / Hora</th>
                             <th class="p-2 border-b border-neutral-700">Ticket</th>
                             <th class="p-2 border-b border-neutral-700">Transición</th>
-                            <th class="p-2 border-b border-neutral-700">Posición Venta</th>
+                            <th class="p-2 border-b border-neutral-700">Posición Inicial Venta</th>
                             <th class="p-2 border-b border-neutral-700">Libres Restantes</th>
                         </tr>
                     </thead>
@@ -154,7 +154,7 @@
 
     </div>
 
-    <!-- Firebase Firestore SDK (Sin Auth) -->
+    <!-- Firebase Firestore SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -186,7 +186,6 @@
 
         let eventosGlobales = [];
 
-        // Dibuja las tarjetas inmediatamente al cargar el documento
         function renderizarBase() {
             const container = document.getElementById('gridBendecidos');
             container.innerHTML = "";
@@ -206,6 +205,22 @@
         }
         renderizarBase();
 
+        function obtenerPosicionInicialReal(ticket, data) {
+            // Busca en el historial de eventos la primera vez que se detectó el ticket
+            const eventos = (data && data.eventos) ? data.eventos : [];
+            const primerEvento = eventos.find(e => e.boleto === ticket);
+            if (primerEvento && primerEvento.vendidos) {
+                return `#${Number(primerEvento.vendidos).toLocaleString()}`;
+            }
+            // Si el objeto del boleto trae posicionInicial la usa, sino posicionAprox
+            const b = (data && data.boletos) ? data.boletos[ticket] : null;
+            if (b) {
+                if (b.posicionInicial) return `#${Number(b.posicionInicial).toLocaleString()}`;
+                if (b.posicionAprox) return `#${Number(b.posicionAprox).toLocaleString()}`;
+            }
+            return "#--";
+        }
+
         function escucharFirestoreDirecto() {
             const refDoc = doc(db, "rifa_estado", "actual");
             
@@ -218,7 +233,7 @@
                     const data = snap.data();
                     eventosGlobales = data.eventos || [];
                     renderizarBendecidos(data);
-                    aplicarFiltrosTabla();
+                    aplicarFiltrosTabla(data);
                 }
             }, (error) => {
                 console.error("Error al escuchar Firestore:", error);
@@ -247,10 +262,10 @@
 
                 if (esGanador) ganadoresCount++;
 
-                const posStr = b.posicionAprox ? `#${Number(b.posicionAprox).toLocaleString()}` : "#--";
+                // MUESTRA SIEMPRE LA POSICIÓN INICIAL REAL
+                const posStr = obtenerPosicionInicialReal(num, data);
                 const premioStr = PREMIOS[num] || "BONO";
 
-                // Definición visual según el estado del boleto
                 let cardStyle = "pixel-card p-2.5 rounded-lg flex flex-col justify-between items-center text-center gap-1 text-green-400";
                 let iconHeader = "🎁";
                 let textHeader = "DISPONIBLE";
@@ -304,7 +319,7 @@
             if (ultimoAzar) {
                 const bAzar = boletosObj[ultimoAzar] || {};
                 const estadoAzar = bAzar.resultado || "disponible";
-                const posAzarStr = bAzar.posicionAprox ? `#${Number(bAzar.posicionAprox).toLocaleString()}` : "#--";
+                const posAzarStr = obtenerPosicionInicialReal(ultimoAzar, data);
 
                 let estadoEstilo = "text-purple-300";
                 if (estadoAzar === "confirmado") estadoEstilo = "text-emerald-400";
@@ -347,11 +362,36 @@
             const tbody = document.getElementById('tablaHistorial');
             tbody.innerHTML = "";
 
-            const filtrados = eventosGlobales.filter(ev => {
-                if (ticketQuery && !ev.boleto.includes(ticketQuery)) return false;
-                if (estadoSel !== "todos" && ev.estado !== estadoSel) return false;
+            // AGRUPAR EVENTOS POR TICKET PARA CONSOLIDAR Y GUARDAR SU POSICIÓN INICIAL
+            const consolidadosMap = {};
 
-                const pos = (ev.vendidos !== undefined && ev.vendidos !== null) ? Number(ev.vendidos) : null;
+            eventosGlobales.forEach(ev => {
+                const t = ev.boleto;
+                if (!consolidadosMap[t]) {
+                    consolidadosMap[t] = {
+                        boleto: t,
+                        posicionInicial: ev.vendidos, // Conserva siempre la primera posición detectada (#48,450)
+                        estadoActual: ev.estado,
+                        transicionUltima: `${ev.anterior || 'inicio'} ➔ ${ev.estado}`,
+                        fechaUltima: ev.detectado,
+                        libresUltimos: ev.disponibles
+                    };
+                } else {
+                    // Actualiza la última fecha y el estado actual más reciente (CONFIRMADO)
+                    consolidadosMap[t].estadoActual = ev.estado;
+                    consolidadosMap[t].transicionUltima = `${ev.anterior || 'pendiente'} ➔ ${ev.estado}`;
+                    consolidadosMap[t].fechaUltima = ev.detectado;
+                    consolidadosMap[t].libresUltimos = ev.disponibles;
+                }
+            });
+
+            const listaConsolidada = Object.values(consolidadosMap);
+
+            const filtrados = listaConsolidada.filter(ev => {
+                if (ticketQuery && !ev.boleto.includes(ticketQuery)) return false;
+                if (estadoSel !== "todos" && ev.estadoActual !== estadoSel) return false;
+
+                const pos = (ev.posicionInicial !== undefined && ev.posicionInicial !== null) ? Number(ev.posicionInicial) : null;
                 if (posMin !== null && (pos === null || pos < posMin)) return false;
                 if (posMax !== null && (pos === null || pos > posMax)) return false;
 
@@ -365,15 +405,16 @@
                 return;
             }
 
-            filtrados.slice().reverse().forEach(ev => {
-                const fechaObj = ev.detectado ? new Date(ev.detectado) : null;
+            // Muestra los registros consolidados ordenados del más reciente al más antiguo
+            filtrados.reverse().forEach(ev => {
+                const fechaObj = ev.fechaUltima ? new Date(ev.fechaUltima) : null;
                 const horaStr = fechaObj ? `${fechaObj.toLocaleDateString()} ${fechaObj.toLocaleTimeString()}` : "N/A";
-                const posStr = ev.vendidos ? `#${Number(ev.vendidos).toLocaleString()}` : "N/A";
-                const libresStr = ev.disponibles ? Number(ev.disponibles).toLocaleString() : "N/A";
+                const posStr = ev.posicionInicial ? `#${Number(ev.posicionInicial).toLocaleString()}` : "N/A";
+                const libresStr = ev.libresUltimos ? Number(ev.libresUltimos).toLocaleString() : "N/A";
 
                 let badgeEstado = "bg-neutral-100 text-neutral-800 border border-neutral-400 font-bold";
-                if (ev.estado === "confirmado") badgeEstado = "bg-emerald-100 text-emerald-900 border border-emerald-400 font-extrabold";
-                if (ev.estado === "pendiente") badgeEstado = "bg-amber-100 text-amber-900 border border-amber-400 font-extrabold";
+                if (ev.estadoActual === "confirmado") badgeEstado = "bg-emerald-100 text-emerald-900 border border-emerald-400 font-extrabold";
+                if (ev.estadoActual === "pendiente") badgeEstado = "bg-amber-100 text-amber-900 border border-amber-400 font-extrabold";
 
                 const tr = document.createElement('tr');
                 tr.className = "border-b border-neutral-200 hover:bg-neutral-100 transition-colors";
@@ -381,8 +422,7 @@
                     <td class="p-2 text-neutral-800 font-semibold">${horaStr}</td>
                     <td class="p-2 font-extrabold text-neutral-900">${ev.boleto}</td>
                     <td class="p-2">
-                        <span class="text-[0.6rem] text-neutral-500 mr-1">${ev.anterior || 'inicio'} ➔</span>
-                        <span class="px-1.5 py-0.5 rounded uppercase text-[0.6rem] ${badgeEstado}">${ev.estado}</span>
+                        <span class="px-1.5 py-0.5 rounded uppercase text-[0.6rem] ${badgeEstado}">${ev.transicionUltima}</span>
                     </td>
                     <td class="p-2 font-bold text-emerald-800">${posStr}</td>
                     <td class="p-2 text-neutral-700 font-medium">${libresStr}</td>
